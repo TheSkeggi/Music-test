@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Now Playing</title>
+  <style>
+    :root {
+      --bg: #f4f1ec;
+      --fg: #1d1b18;
+      --muted: #6b665e;
+      --accent: #d9480f;
+      --ring: rgba(217, 72, 15, 0.25);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141311;
+        --fg: #f2efe9;
+        --muted: #a39d93;
+        --accent: #ff6b2c;
+        --ring: rgba(255, 107, 44, 0.25);
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    main { text-align: center; width: 100%; max-width: 420px; }
+    h1 { font-size: 1.6rem; margin: 0 0 6px; }
+    .sub { color: var(--muted); margin: 0 0 32px; }
+    .btn {
+      width: 140px; height: 140px; border-radius: 50%;
+      border: none; background: var(--accent); color: #fff;
+      display: grid; place-items: center; margin: 0 auto 28px;
+      box-shadow: 0 0 0 0 var(--ring);
+      transition: transform .15s ease;
+    }
+    .btn:active { transform: scale(0.95); }
+    .playing .btn { animation: pulse 1.8s ease-out infinite; }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 var(--ring); }
+      100% { box-shadow: 0 0 0 28px rgba(0,0,0,0); }
+    }
+    .btn svg { width: 56px; height: 56px; fill: currentColor; }
+    .bar {
+      height: 6px; background: var(--ring); border-radius: 3px; overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .fill { height: 100%; width: 0; background: var(--accent); }
+    .time { display: flex; justify-content: space-between; color: var(--muted); font-size: .85rem; }
+    #status { margin-top: 24px; color: var(--muted); font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Now Playing</h1>
+    <p class="sub">Your track title here</p>
+
+    <button class="btn" id="btn" aria-label="Play or pause">
+      <svg id="icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+
+    <div class="bar"><div class="fill" id="fill"></div></div>
+    <div class="time"><span id="cur">0:00</span><span id="dur">0:00</span></div>
+
+    <p id="status">Tap anywhere to play</p>
+  </main>
+
+  <!-- Change song.mp3 to your file name (it must sit next to this index.html) -->
+  <audio id="audio" src="https://theskeggi.github.io/Music-test/24%20-%20Yo%20Ho,%20A%20Pirates%20Life%20For%20Me.mp3" preload="auto" autoplay playsinline></audio>
+
+  <script>
+    const audio  = document.getElementById('audio');
+    const icon   = document.getElementById('icon');
+    const status = document.getElementById('status');
+    const fill   = document.getElementById('fill');
+    const cur    = document.getElementById('cur');
+    const dur    = document.getElementById('dur');
+
+    const PLAY  = '<path d="M8 5v14l11-7z"/>';
+    const PAUSE = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+
+    const fmt = s => isFinite(s) ? Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') : '0:00';
+
+    function toggle() {
+      if (audio.paused) audio.play().catch(() => {});
+      else audio.pause();
+    }
+
+    // Tap anywhere on the page to play/pause
+    document.body.addEventListener('click', toggle);
+
+    audio.addEventListener('play', () => {
+      icon.innerHTML = PAUSE;
+      status.textContent = '♪ Playing';
+      document.body.classList.add('playing');
+    });
+    audio.addEventListener('pause', () => {
+      icon.innerHTML = PLAY;
+      status.textContent = 'Paused — tap to resume';
+      document.body.classList.remove('playing');
+    });
+    audio.addEventListener('ended', () => {
+      status.textContent = 'Finished — tap to play again';
+    });
+    audio.addEventListener('loadedmetadata', () => { dur.textContent = fmt(audio.duration); });
+    audio.addEventListener('timeupdate', () => {
+      cur.textContent = fmt(audio.currentTime);
+      if (audio.duration) fill.style.width = (audio.currentTime / audio.duration * 100) + '%';
+    });
+    audio.addEventListener('error', () => {
+      status.textContent = 'Could not load the audio file — check the file name.';
+    });
+
+    // Try to autoplay right away; if the browser blocks it, the tap fallback takes over
+    audio.play().catch(() => { status.textContent = 'Tap anywhere to play'; });
+  </script>
+</body>
+</html>
